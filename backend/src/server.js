@@ -14,6 +14,7 @@ const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
+const addressRoutes = require('./routes/addressRoutes');
 
 connectDB();
 
@@ -42,11 +43,13 @@ app.get('/', (req, res) => {
   });
 });
 
+// ------------ Routes ------------
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/addresses', addressRoutes);
 
 app.use(notFound); // 404 handler - must come after all routes
 app.use(errorHandler); // Centralized error handler - must be last
@@ -59,6 +62,7 @@ const server = app.listen(PORT, () => {
   );
 });
 
+// Handle unhandled promise rejections gracefully
 process.on('unhandledRejection', (err) => {
   console.error(`Unhandled Rejection: ${err.message}`);
   server.close(() => process.exit(1));
