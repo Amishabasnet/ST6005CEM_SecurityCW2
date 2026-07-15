@@ -1,63 +1,33 @@
-const mongoose = require('mongoose');
+const express = require('express');
+const {
+  addAddress,
+  getAddresses,
+  updateAddress,
+  deleteAddress,
+  setDefaultAddress,
+} = require('../controllers/addressController');
+const { protect } = require('../middleware/authMiddleware');
+const { validate } = require('../validators/authValidator');
+const {
+  createAddressValidationRules,
+  updateAddressValidationRules,
+  addressIdParamValidationRules,
+} = require('../validators/addressValidator');
 
-const addressSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    fullName: {
-      type: String,
-      required: [true, 'Full name is required'],
-      trim: true,
-      maxlength: [100, 'Full name cannot exceed 100 characters'],
-    },
-    phone: {
-      type: String,
-      required: [true, 'Phone number is required'],
-      trim: true,
-      match: [/^[0-9+\-\s()]{7,20}$/, 'Please provide a valid phone number'],
-    },
-    street: {
-      type: String,
-      required: [true, 'Street address is required'],
-      trim: true,
-      maxlength: [200, 'Street address cannot exceed 200 characters'],
-    },
-    city: {
-      type: String,
-      required: [true, 'City is required'],
-      trim: true,
-      maxlength: [100, 'City cannot exceed 100 characters'],
-    },
-    state: {
-      type: String,
-      trim: true,
-      default: '',
-      maxlength: [100, 'State cannot exceed 100 characters'],
-    },
-    postalCode: {
-      type: String,
-      required: [true, 'Postal code is required'],
-      trim: true,
-      maxlength: [20, 'Postal code cannot exceed 20 characters'],
-    },
-    country: {
-      type: String,
-      required: [true, 'Country is required'],
-      trim: true,
-      maxlength: [100, 'Country cannot exceed 100 characters'],
-    },
-    isDefault: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  { timestamps: true }
-);
+const router = express.Router();
 
-// Speeds up the common "all addresses for this user" lookup
-addressSchema.index({ user: 1 });
+router.use(protect);
 
-module.exports = mongoose.model('Address', addressSchema);
+router
+  .route('/')
+  .post(createAddressValidationRules, validate, addAddress)
+  .get(getAddresses);
+
+router
+  .route('/:id')
+  .put(addressIdParamValidationRules, updateAddressValidationRules, validate, updateAddress)
+  .delete(addressIdParamValidationRules, validate, deleteAddress);
+
+router.put('/:id/default', addressIdParamValidationRules, validate, setDefaultAddress);
+
+module.exports = router;
