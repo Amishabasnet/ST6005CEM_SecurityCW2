@@ -1,16 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-
-const addressSchema = new mongoose.Schema(
-  {
-    street: { type: String, required: true },
-    city: { type: String, required: true },
-    state: { type: String },
-    postalCode: { type: String, required: true },
-    country: { type: String, required: true },
-  },
-  { _id: false }
-);
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema(
   {
@@ -18,6 +8,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Name is required'],
       trim: true,
+      minlength: [2, 'Name must be at least 2 characters long'],
+      maxlength: [50, 'Name cannot exceed 50 characters'],
     },
     email: {
       type: String,
@@ -25,26 +17,73 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email'],
+      match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
     },
     password: {
       type: String,
       required: [true, 'Password is required'],
-      minlength: 6,
+      minlength: [6, 'Password must be at least 6 characters long'],
       select: false,
     },
-    role: {
-      type: String,
-      enum: ['customer', 'admin'],
-      default: 'customer',
-    },
-    address: addressSchema,
     phone: {
       type: String,
       trim: true,
+      default: '',
+      validate: {
+        validator: function (value) {
+          return value === '' || /^[0-9+\-\s()]{7,20}$/.test(value);
+        },
+        message: 'Please provide a valid phone number',
+      },
+    },
+    profileImage: {
+      type: String,
+      default: '',
+    },
+    address: {
+      type: String,
+      trim: true,
+      default: '',
+      maxlength: [200, 'Address cannot exceed 200 characters'],
+    },
+    city: {
+      type: String,
+      trim: true,
+      default: '',
+      maxlength: [100, 'City cannot exceed 100 characters'],
+    },
+    country: {
+      type: String,
+      trim: true,
+      default: '',
+      maxlength: [100, 'Country cannot exceed 100 characters'],
+    },
+    postalCode: {
+      type: String,
+      trim: true,
+      default: '',
+      maxlength: [20, 'Postal code cannot exceed 20 characters'],
+    },
+    role: {
+      type: String,
+      enum: {
+        values: ['user', 'admin'],
+        message: 'Role must be either "user" or "admin"',
+      },
+      default: 'user',
+    },
+    resetPasswordToken: {
+      type: String,
+      select: false,
+    },
+    resetPasswordExpire: {
+      type: Date,
+      select: false,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: { createdAt: true, updatedAt: true },
+  }
 );
 
 userSchema.pre('save', async function (next) {
@@ -56,6 +95,15 @@ userSchema.pre('save', async function (next) {
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return bcrypt.compare(enteredPassword, this.password);
+};
+
+userSchema.methods.getResetPasswordToken = function () {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  this.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  this.resetPasswordExpire = Date.now() + 30 * 60 * 1000; // 30 minutes
+
+  return resetToken;
 };
 
 module.exports = mongoose.model('User', userSchema);

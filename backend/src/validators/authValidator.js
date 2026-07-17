@@ -84,9 +84,29 @@ const updateProfileValidationRules = [
     .withMessage('Role cannot be updated through this endpoint'),
 ];
 
+const forgotPasswordValidationRules = [
+  body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail(),
+];
+
+const resetPasswordValidationRules = [
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long'),
+];
+
 module.exports = {
   validate,
   registerValidationRules,
   loginValidationRules,
   updateProfileValidationRules,
+  forgotPasswordValidationRules,
+  resetPasswordValidationRules,
 };

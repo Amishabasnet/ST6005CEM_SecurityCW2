@@ -7,7 +7,7 @@ const escapeRegex = require('../utils/escapeRegex');
 
 const removeImageFilesFromDisk = (images = []) => {
   images.forEach((image) => {
-    if (!image.filename) return; // external URL, nothing stored on disk
+    if (!image.filename) return; 
     const filePath = path.join(__dirname, '..', 'uploads', 'products', image.filename);
     fs.unlink(filePath, (err) => {
       if (err && err.code !== 'ENOENT') {
@@ -159,6 +159,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     }
     product.discountPrice = discountPrice;
   }
+
   const newImages = buildImagesFromRequest(req);
   if (newImages !== undefined) {
     removeImageFilesFromDisk(product.images);

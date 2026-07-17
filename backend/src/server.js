@@ -5,10 +5,12 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
+const helmet = require('helmet');
 
 const connectDB = require('./config/db');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
+const { ipAccessControl, globalLimiter, sensitiveActionLimiter } = require('./middleware/security');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
@@ -17,20 +19,35 @@ const wishlistRoutes = require('./routes/wishlistRoutes');
 const addressRoutes = require('./routes/addressRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const sellerRoutes = require('./routes/sellerRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
+// Connect to MongoDB
 connectDB();
 
 const app = express();
 
+if (process.env.TRUST_PROXY === 'true') {
+  app.set('trust proxy', 1);
+}
+
+app.use(helmet());
 app.use(
   cors({
     origin: process.env.CLIENT_URL || '*',
     credentials: true,
   })
 );
-app.use(express.json()); // JSON body parser
+app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+app.use(ipAccessControl);
+app.use(globalLimiter);
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
@@ -51,8 +68,14 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/addresses', addressRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/payments', paymentRoutes);
+app.use('/api/orders', sensitiveActionLimiter, orderRoutes);
+app.use('/api/payments', sensitiveActionLimiter, paymentRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/admin', sensitiveActionLimiter, adminRoutes);
+app.use('/api/sellers', sellerRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
