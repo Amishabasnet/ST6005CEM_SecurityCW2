@@ -17,7 +17,9 @@ const wishlistRoutes = require('./routes/wishlistRoutes');
 const addressRoutes = require('./routes/addressRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
 
+// Connect to MongoDB
 connectDB();
 
 const app = express();
@@ -53,10 +55,10 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/reviews', reviewRoutes);
 
-app.use(notFound);
-app.use(errorHandler);
-
+app.use(notFound); 
+app.use(errorHandler); 
 const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
