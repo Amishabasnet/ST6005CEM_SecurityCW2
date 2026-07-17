@@ -20,6 +20,8 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 // Connect to MongoDB
 connectDB();
@@ -60,6 +62,8 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/notification', notificationRoutes);
 
 app.use(notFound); 
 app.use(errorHandler);
