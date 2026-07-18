@@ -3,7 +3,6 @@ const Order = require('../models/orderModel');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const { initiatePayment, lookupPayment } = require('../utils/khaltiClient');
-
 const mapKhaltiStatus = (khaltiStatus) => {
   switch (khaltiStatus) {
     case 'Completed':
@@ -40,6 +39,7 @@ const createPayment = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'This order has already been paid for');
   }
 
+  // Khalti amounts are expressed in paisa (1 NPR = 100 paisa)
   const amountInPaisa = Math.round(order.totalPrice * 100);
 
   const khaltiResponse = await callKhalti(

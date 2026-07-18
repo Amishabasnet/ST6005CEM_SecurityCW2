@@ -87,11 +87,24 @@ const orderSchema = new mongoose.Schema(
       required: true,
       min: [0, 'Total price cannot be negative'],
     },
+    subtotal: {
+      type: Number,
+      min: [0, 'Subtotal cannot be negative'],
+    },
+    couponCode: {
+      type: String,
+      default: null,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+      min: [0, 'Discount amount cannot be negative'],
+    },
     deliveredAt: {
       type: Date,
     },
   },
-  { timestamps: true } // adds createdAt (and updatedAt)
+  { timestamps: true } 
 );
 
 orderSchema.index({ user: 1, createdAt: -1 });

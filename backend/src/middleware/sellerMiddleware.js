@@ -1,7 +1,6 @@
 const Seller = require('../models/sellerModel');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
-
 const loadSeller = asyncHandler(async (req, res, next) => {
   const seller = await Seller.findOne({ user: req.user._id });
 

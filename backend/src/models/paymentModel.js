@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const { PAYMENT_STATUSES } = require('../utils/paymentConstants');
-
 const paymentSchema = new mongoose.Schema(
   {
     user: {

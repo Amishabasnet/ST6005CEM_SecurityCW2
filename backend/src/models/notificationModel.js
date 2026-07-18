@@ -1,7 +1,5 @@
 const mongoose = require('mongoose');
-
 const NOTIFICATION_TYPES = ['order_status_update', 'new_order', 'general'];
-
 const notificationSchema = new mongoose.Schema(
   {
     user: {

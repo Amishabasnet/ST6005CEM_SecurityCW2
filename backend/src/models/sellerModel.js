@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { encrypt, decrypt } = require('../utils/encryption');
 
 const sellerSchema = new mongoose.Schema(
   {
@@ -28,13 +29,15 @@ const sellerSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Phone number is required'],
       trim: true,
-      match: [/^[0-9+\-\s()]{7,20}$/, 'Please provide a valid phone number'],
+      set: (value) => (value === undefined || value === null ? value : encrypt(value)),
+      get: (value) => (value === undefined || value === null ? value : decrypt(value)),
     },
     address: {
       type: String,
       required: [true, 'Address is required'],
       trim: true,
-      maxlength: [300, 'Address cannot exceed 300 characters'],
+      set: (value) => (value === undefined || value === null ? value : encrypt(value)),
+      get: (value) => (value === undefined || value === null ? value : decrypt(value)),
     },
     isApproved: {
       type: Boolean,
@@ -43,6 +46,8 @@ const sellerSchema = new mongoose.Schema(
   },
   {
     timestamps: { createdAt: true, updatedAt: true },
+    toJSON: { getters: true },
+    toObject: { getters: true },
   }
 );
 

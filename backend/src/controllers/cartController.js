@@ -4,6 +4,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 
 const CART_POPULATE_FIELDS = 'name images price discountPrice stock isActive';
+
 const getOrCreateCart = async (userId) => {
   let cart = await Cart.findOne({ user: userId });
   if (!cart) {
@@ -44,7 +45,7 @@ const addToCart = asyncHandler(async (req, res) => {
       );
     }
     existingItem.quantity = newQuantity;
-    existingItem.price = unitPrice;
+    existingItem.price = unitPrice; // refresh price snapshot in case it changed
   } else {
     if (Number(quantity) > product.stock) {
       throw new ApiError(400, `Only ${product.stock} unit(s) of "${product.name}" are available`);

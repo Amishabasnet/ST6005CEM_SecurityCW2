@@ -7,7 +7,7 @@ const escapeRegex = require('../utils/escapeRegex');
 
 const removeImageFilesFromDisk = (images = []) => {
   images.forEach((image) => {
-    if (!image.filename) return; 
+    if (!image.filename) return; // external URL, nothing stored on disk
     const filePath = path.join(__dirname, '..', 'uploads', 'products', image.filename);
     fs.unlink(filePath, (err) => {
       if (err && err.code !== 'ENOENT') {
@@ -31,7 +31,7 @@ const buildImagesFromRequest = (req) => {
       .map((img) => ({ url: img.url, filename: '' }));
   }
 
-  return undefined;
+  return undefined; // no images provided — leave existing/default value untouched
 };
 
 const createProduct = asyncHandler(async (req, res) => {
@@ -69,27 +69,33 @@ const getProducts = asyncHandler(async (req, res) => {
   const { keyword, category, brand, minPrice, maxPrice, rating, sort, page, limit } =
     req.query;
 
+  // ---- Build the MongoDB filter from query params ----
   const filter = { isActive: true };
 
+  // Search by name OR description
   if (keyword) {
     const searchRegex = { $regex: escapeRegex(keyword), $options: 'i' };
     filter.$or = [{ name: searchRegex }, { description: searchRegex }];
   }
 
+  // Filter by category (case-insensitive exact match)
   if (category) {
     filter.category = { $regex: `^${escapeRegex(category)}$`, $options: 'i' };
   }
 
+  // Filter by brand (case-insensitive exact match)
   if (brand) {
     filter.brand = { $regex: `^${escapeRegex(brand)}$`, $options: 'i' };
   }
 
+  // Filter by price range
   if (minPrice !== undefined || maxPrice !== undefined) {
     filter.price = {};
     if (minPrice !== undefined) filter.price.$gte = Number(minPrice);
     if (maxPrice !== undefined) filter.price.$lte = Number(maxPrice);
   }
 
+  // Filter by minimum rating (e.g. rating=4 -> 4 stars & up)
   if (rating !== undefined) {
     filter.rating = { $gte: Number(rating) };
   }
@@ -224,4 +230,6 @@ module.exports = {
   updateProduct,
   deleteProduct,
   updateStock,
+  buildImagesFromRequest,
+  removeImageFilesFromDisk,
 };

@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-
 const imageSchema = new mongoose.Schema(
   {
     url: {
@@ -16,6 +15,11 @@ const imageSchema = new mongoose.Schema(
 
 const productSchema = new mongoose.Schema(
   {
+    seller: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Seller',
+      default: null,
+    },
     name: {
       type: String,
       required: [true, 'Product name is required'],
@@ -68,6 +72,15 @@ const productSchema = new mongoose.Schema(
       min: [0, 'Stock cannot be negative'],
       default: 0,
     },
+    lowStockLimit: {
+      type: Number,
+      default: 10,
+      min: [0, 'Low stock limit cannot be negative'],
+    },
+    isAvailable: {
+      type: Boolean,
+      default: true,
+    },
     rating: {
       type: Number,
       default: 0,
@@ -85,7 +98,7 @@ const productSchema = new mongoose.Schema(
     },
     isActive: {
       type: Boolean,
-      default: true,
+      default: true, // supports "soft delete" — see deleteProduct controller
     },
   },
   {
@@ -93,6 +106,12 @@ const productSchema = new mongoose.Schema(
   }
 );
 
+productSchema.pre('save', function (next) {
+  if (this.isNew || this.isModified('stock')) {
+    this.isAvailable = this.stock > 0;
+  }
+  next();
+});
 productSchema.virtual('inStock').get(function () {
   return this.stock > 0;
 });
@@ -102,5 +121,6 @@ productSchema.set('toObject', { virtuals: true });
 productSchema.index({ name: 'text', description: 'text', brand: 'text' });
 productSchema.index({ category: 1 });
 productSchema.index({ price: 1 });
+productSchema.index({ seller: 1 });
 
 module.exports = mongoose.model('Product', productSchema);

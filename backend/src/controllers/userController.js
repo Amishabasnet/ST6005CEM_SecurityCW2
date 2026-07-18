@@ -1,57 +1,21 @@
 const User = require('../models/userModel');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
-const generateToken = require('../utils/generateToken');
+const { sendTokenResponse } = require('../utils/generateToken');
 
-const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, phone, address } = req.body;
-
-  if (!name || !email || !password) {
-    throw new ApiError(400, 'Name, email, and password are required');
-  }
-
-  const userExists = await User.findOne({ email });
-  if (userExists) {
-    throw new ApiError(400, 'A user with this email already exists');
-  }
-
-  const user = await User.create({ name, email, password, phone, address });
-
-  res.status(201).json({
-    success: true,
-    data: {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id),
-    },
-  });
-});
-
-const loginUser = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    throw new ApiError(400, 'Email and password are required');
-  }
-
-  const user = await User.findOne({ email }).select('+password');
-
-  if (!user || !(await user.matchPassword(password))) {
-    throw new ApiError(401, 'Invalid email or password');
-  }
-
-  res.status(200).json({
-    success: true,
-    data: {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id),
-    },
-  });
+const toProfileResponse = (user) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  phone: user.phone,
+  profileImage: user.profileImage,
+  address: user.address,
+  city: user.city,
+  country: user.country,
+  postalCode: user.postalCode,
+  role: user.role,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
 });
 
 const getUserProfile = asyncHandler(async (req, res) => {
@@ -61,60 +25,86 @@ const getUserProfile = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'User not found');
   }
 
-  res.status(200).json({ success: true, data: user });
+  res.status(200).json({
+    success: true,
+    data: toProfileResponse(user),
+  });
 });
 
 const updateUserProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
+  const {
+    name,
+    email,
+    phone,
+    profileImage,
+    address,
+    city,
+    country,
+    postalCode,
+  } = req.body;
 
+  const user = await User.findById(req.user._id);
   if (!user) {
     throw new ApiError(404, 'User not found');
   }
 
-  user.name = req.body.name || user.name;
-  user.email = req.body.email || user.email;
-  user.phone = req.body.phone || user.phone;
-  user.address = req.body.address || user.address;
-
-  if (req.body.password) {
-    user.password = req.body.password;
+  if (email && email !== user.email) {
+    const emailTaken = await User.findOne({ email });
+    if (emailTaken) {
+      throw new ApiError(400, 'This email is already in use by another account');
+    }
+    user.email = email;
   }
+
+  if (name !== undefined) user.name = name;
+  if (phone !== undefined) user.phone = phone;
+  if (profileImage !== undefined) user.profileImage = profileImage;
+  if (address !== undefined) user.address = address;
+  if (city !== undefined) user.city = city;
+  if (country !== undefined) user.country = country;
+  if (postalCode !== undefined) user.postalCode = postalCode;
 
   const updatedUser = await user.save();
 
   res.status(200).json({
     success: true,
-    data: {
-      _id: updatedUser._id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      role: updatedUser.role,
-    },
+    message: 'Profile updated successfully',
+    data: toProfileResponse(updatedUser),
   });
 });
 
-const getUsers = asyncHandler(async (req, res) => {
-  const users = await User.find({});
-  res.status(200).json({ success: true, count: users.length, data: users });
-});
+const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
 
-const deleteUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id);
-
+  // Password/history are select:false on the schema, so fetch explicitly here
+  const user = await User.findById(req.user._id).select('+password +passwordHistory');
   if (!user) {
     throw new ApiError(404, 'User not found');
   }
 
-  await user.deleteOne();
+  const isMatch = await user.matchPassword(currentPassword);
+  if (!isMatch) {
+    throw new ApiError(401, 'Current password is incorrect');
+  }
 
-  res.status(200).json({ success: true, message: 'User removed successfully' });
+  // Password reuse prevention (see models/userModel.js).
+  if (await user.isPasswordReused(newPassword)) {
+    throw new ApiError(
+      400,
+      'You cannot reuse your current or a recently used password. Please choose a different one.'
+    );
+  }
+  user.archiveCurrentPassword();
+
+  user.password = newPassword;
+  user.tokenVersion = (user.tokenVersion || 0) + 1;
+  await user.save();
+
+  sendTokenResponse(user, 200, res, req);
 });
 
 module.exports = {
-  registerUser,
-  loginUser,
   getUserProfile,
   updateUserProfile,
-  getUsers,
-  deleteUser,
+  changePassword,
 };

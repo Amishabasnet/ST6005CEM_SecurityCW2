@@ -44,7 +44,6 @@ const updateInventory = asyncHandler(async (req, res) => {
   });
 });
 
-
 const getLowStockProducts = asyncHandler(async (req, res) => {
   const products = await Product.find({
     isActive: true,
