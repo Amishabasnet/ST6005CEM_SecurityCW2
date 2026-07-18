@@ -3,11 +3,13 @@ const errorHandler = (err, req, res, next) => {
   let message = err.message || 'Internal Server Error';
   let errors = err.errors || null;
 
+  // Mongoose bad ObjectId (e.g. malformed :id param)
   if (err.name === 'CastError' && err.kind === 'ObjectId') {
     statusCode = 404;
     message = `Resource not found with id: ${err.value}`;
   }
 
+  // Mongoose schema validation error
   if (err.name === 'ValidationError') {
     statusCode = 400;
     errors = Object.values(err.errors).map((val) => ({
@@ -16,13 +18,13 @@ const errorHandler = (err, req, res, next) => {
     }));
     message = 'Validation failed';
   }
-
   if (err.code === 11000) {
     statusCode = 400;
     const field = Object.keys(err.keyValue)[0];
     message = `A record with this ${field} already exists`;
   }
 
+  // JWT errors
   if (err.name === 'JsonWebTokenError') {
     statusCode = 401;
     message = 'Invalid token. Please log in again.';
@@ -36,6 +38,7 @@ const errorHandler = (err, req, res, next) => {
   res.status(statusCode).json({
     success: false,
     message,
+    ...(err.code ? { code: err.code } : {}),
     ...(errors ? { errors } : {}),
     ...(process.env.NODE_ENV === 'development' ? { stack: err.stack } : {}),
   });

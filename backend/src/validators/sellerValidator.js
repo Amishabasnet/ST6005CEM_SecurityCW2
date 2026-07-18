@@ -1,5 +1,4 @@
 const { body, param, query } = require('express-validator');
-
 const registerSellerValidationRules = [
   body('shopName')
     .trim()
@@ -30,7 +29,6 @@ const registerSellerValidationRules = [
 
   body('shopLogo').optional({ checkFalsy: true }).isURL().withMessage('shopLogo must be a valid URL'),
 ];
-
 const updateSellerProfileValidationRules = [
   body('shopName')
     .optional()
@@ -67,7 +65,6 @@ const updateSellerProfileValidationRules = [
     .exists()
     .withMessage('isApproved cannot be set directly; it is controlled by an admin'),
 ];
-
 const addSellerProductValidationRules = [
   body('name')
     .trim()
@@ -119,7 +116,6 @@ const addSellerProductValidationRules = [
 
   body('images.*.url').optional().isURL().withMessage('Each image must have a valid URL'),
 ];
-
 const updateSellerProductValidationRules = [
   param('id').isMongoId().withMessage('Invalid product id'),
 
@@ -178,12 +174,9 @@ const updateSellerProductValidationRules = [
     .exists()
     .withMessage('numReviews cannot be set directly; it is derived from reviews'),
 ];
-
 const sellerProductIdParamValidationRules = [
   param('id').isMongoId().withMessage('Invalid product id'),
 ];
-
-
 const sellerListValidationRules = [
   query('page').optional().isInt({ min: 1 }).withMessage('page must be a positive integer'),
   query('limit')
@@ -191,7 +184,6 @@ const sellerListValidationRules = [
     .isInt({ min: 1, max: 100 })
     .withMessage('limit must be an integer between 1 and 100'),
 ];
-
 const getAllSellersValidationRules = [
   query('status')
     .optional()
@@ -203,7 +195,6 @@ const getAllSellersValidationRules = [
     .isInt({ min: 1, max: 100 })
     .withMessage('limit must be an integer between 1 and 100'),
 ];
-
 const approveSellerValidationRules = [
   param('id').isMongoId().withMessage('Invalid seller id'),
   body('isApproved')
@@ -213,7 +204,6 @@ const approveSellerValidationRules = [
     .withMessage('isApproved must be true (approve) or false (reject)')
     .toBoolean(),
 ];
-
 module.exports = {
   registerSellerValidationRules,
   updateSellerProfileValidationRules,

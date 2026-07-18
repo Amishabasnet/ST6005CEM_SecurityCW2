@@ -1,6 +1,5 @@
 const Notification = require('../models/notificationModel');
 const User = require('../models/userModel');
-
 const STATUS_TEMPLATES = {
   Pending: {
     title: 'Order Placed',
@@ -23,7 +22,6 @@ const STATUS_TEMPLATES = {
     message: (shortId) => `Your order #${shortId} has been cancelled.`,
   },
 };
-
 const notifyOrderStatusUpdate = async (order) => {
   try {
     const template = STATUS_TEMPLATES[order.orderStatus];
@@ -43,7 +41,6 @@ const notifyOrderStatusUpdate = async (order) => {
     console.error(`Failed to create order-status notification: ${err.message}`);
   }
 };
-
 const notifyAdminsNewOrder = async (order) => {
   try {
     const admins = await User.find({ role: 'admin' }).select('_id');
@@ -66,5 +63,4 @@ const notifyAdminsNewOrder = async (order) => {
     console.error(`Failed to notify admins of new order: ${err.message}`);
   }
 };
-
 module.exports = { notifyOrderStatusUpdate, notifyAdminsNewOrder };

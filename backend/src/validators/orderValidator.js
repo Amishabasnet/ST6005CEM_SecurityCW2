@@ -1,12 +1,17 @@
 const { body, param } = require('express-validator');
 const { PAYMENT_METHODS, ORDER_STATUSES } = require('../utils/orderConstants');
-
 const placeOrderValidationRules = [
   body('paymentMethod')
     .notEmpty()
     .withMessage('paymentMethod is required')
     .isIn(PAYMENT_METHODS)
     .withMessage(`paymentMethod must be one of: ${PAYMENT_METHODS.join(', ')}`),
+
+  body('couponCode')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ min: 3, max: 20 })
+    .withMessage('couponCode must be 3-20 characters'),
 
   body('addressId')
     .optional()
@@ -55,7 +60,6 @@ const placeOrderValidationRules = [
     .trim()
     .notEmpty()
     .withMessage('shippingAddress.country is required'),
-
   body().custom((value, { req }) => {
     if (!req.body.addressId && !req.body.shippingAddress) {
       throw new Error('Provide either addressId or a shippingAddress object');
@@ -63,11 +67,9 @@ const placeOrderValidationRules = [
     return true;
   }),
 ];
-
 const orderIdParamValidationRules = [
   param('id').isMongoId().withMessage('id must be a valid order ID'),
 ];
-
 const updateOrderStatusValidationRules = [
   param('id').isMongoId().withMessage('id must be a valid order ID'),
 
@@ -77,7 +79,6 @@ const updateOrderStatusValidationRules = [
     .isIn(ORDER_STATUSES)
     .withMessage(`orderStatus must be one of: ${ORDER_STATUSES.join(', ')}`),
 ];
-
 module.exports = {
   placeOrderValidationRules,
   orderIdParamValidationRules,

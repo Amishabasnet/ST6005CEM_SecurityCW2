@@ -10,6 +10,7 @@ const { updateInventoryValidationRules } = require('../validators/inventoryValid
 
 const router = express.Router();
 
+// Every inventory route is admin-only.
 router.use(protect, authorize('admin'));
 
 router.get('/low-stock', getLowStockProducts);

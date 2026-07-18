@@ -1,5 +1,4 @@
 const { body, param } = require('express-validator');
-
 const updateInventoryValidationRules = [
   param('productId').isMongoId().withMessage('productId must be a valid product ID'),
 
@@ -35,5 +34,4 @@ const updateInventoryValidationRules = [
     return true;
   }),
 ];
-
 module.exports = { updateInventoryValidationRules };

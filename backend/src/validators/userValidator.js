@@ -1,5 +1,5 @@
 const { body } = require('express-validator');
-
+const { isStrongPassword, STRONG_PASSWORD_MESSAGE } = require('../utils/passwordPolicy');
 const updateUserProfileValidationRules = [
   body('name')
     .optional()
@@ -60,15 +60,14 @@ const updateUserProfileValidationRules = [
     .exists()
     .withMessage('Use PUT /api/users/change-password to change your password'),
 ];
-
 const changePasswordValidationRules = [
   body('currentPassword').notEmpty().withMessage('Current password is required'),
 
   body('newPassword')
     .notEmpty()
     .withMessage('New password is required')
-    .isLength({ min: 6 })
-    .withMessage('New password must be at least 6 characters long'),
+    .custom(isStrongPassword)
+    .withMessage(STRONG_PASSWORD_MESSAGE),
 
   body('confirmNewPassword')
     .notEmpty()

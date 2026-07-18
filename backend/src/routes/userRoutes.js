@@ -1,26 +1,26 @@
 const express = require('express');
 const {
-  registerUser,
-  loginUser,
   getUserProfile,
   updateUserProfile,
-  getUsers,
-  deleteUser,
+  changePassword,
 } = require('../controllers/userController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
+const { enforcePasswordNotExpired } = require('../middleware/passwordExpiry');
+const { validate } = require('../validators/authValidator');
+const {
+  updateUserProfileValidationRules,
+  changePasswordValidationRules,
+} = require('../validators/userValidator');
 
 const router = express.Router();
 
-// Public routes
-router.post('/register', registerUser);
-router.post('/login', loginUser);
+router.use(protect);
 
-// Private routes (logged-in user)
-router.get('/profile', protect, getUserProfile);
-router.put('/profile', protect, updateUserProfile);
+router
+  .route('/profile')
+  .get(enforcePasswordNotExpired, getUserProfile)
+  .put(enforcePasswordNotExpired, updateUserProfileValidationRules, validate, updateUserProfile);
 
-// Admin-only routes
-router.get('/', protect, authorize('admin'), getUsers);
-router.delete('/:id', protect, authorize('admin'), deleteUser);
+router.put('/change-password', changePasswordValidationRules, validate, changePassword);
 
 module.exports = router;

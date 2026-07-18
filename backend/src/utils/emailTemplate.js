@@ -1,6 +1,5 @@
 const BRAND_NAME = process.env.EMAIL_FROM_NAME || 'Our Store';
 const BRAND_COLOR = '#2563eb';
-
 const renderShell = ({ preheader = '', title, bodyHtml }) => `
 <!DOCTYPE html>
 <html lang="en">
@@ -77,7 +76,6 @@ const orderItemsTable = (orderItems = []) => `
     </tbody>
   </table>
 `;
-
 const welcomeEmailTemplate = ({ name }) =>
   renderShell({
     title: `Welcome to ${BRAND_NAME}`,
@@ -93,7 +91,6 @@ const welcomeEmailTemplate = ({ name }) =>
       </p>
     `,
   });
-
 const orderConfirmationTemplate = ({ name, order }) =>
   renderShell({
     title: 'Order Confirmation',
@@ -118,7 +115,6 @@ const orderConfirmationTemplate = ({ name, order }) =>
       </p>
     `,
   });
-
 const passwordResetTemplate = ({ name, resetUrl, expiresInMinutes = 30 }) =>
   renderShell({
     title: 'Reset Your Password',
@@ -139,7 +135,6 @@ const passwordResetTemplate = ({ name, resetUrl, expiresInMinutes = 30 }) =>
       </p>
     `,
   });
-
 const orderStatusUpdateTemplate = ({ name, order }) =>
   renderShell({
     title: 'Order Status Update',
@@ -158,7 +153,6 @@ const orderStatusUpdateTemplate = ({ name, order }) =>
       </p>
     `,
   });
-
 const orderDeliveredTemplate = ({ name, order }) =>
   renderShell({
     title: 'Order Delivered',
@@ -175,11 +169,31 @@ const orderDeliveredTemplate = ({ name, order }) =>
       </p>
     `,
   });
-
+const magicLinkTemplate = ({ name, loginUrl, expiresInMinutes = 15 }) =>
+  renderShell({
+    title: 'Your Login Link',
+    preheader: 'Log in without a password',
+    bodyHtml: `
+      <h2 style="margin-top:0; color:#111827;">Log in to your account</h2>
+      <p style="font-size:14px; color:#374151; line-height:1.6;">
+        Hi ${name}, click the button below to log in instantly. This link will expire in
+        ${expiresInMinutes} minutes and can only be used once.
+      </p>
+      ${button({ href: loginUrl, label: 'Log In' })}
+      <p style="font-size:12px; color:#9ca3af; line-height:1.6;">
+        If the button doesn't work, copy and paste this link into your browser:<br/>
+        <a href="${loginUrl}" style="color:${BRAND_COLOR};">${loginUrl}</a>
+      </p>
+      <p style="font-size:14px; color:#374151; line-height:1.6;">
+        If you didn't request this, you can safely ignore this email — no one can log in without clicking this link.
+      </p>
+    `,
+  });
 module.exports = {
   welcomeEmailTemplate,
   orderConfirmationTemplate,
   passwordResetTemplate,
   orderStatusUpdateTemplate,
   orderDeliveredTemplate,
+  magicLinkTemplate,
 };

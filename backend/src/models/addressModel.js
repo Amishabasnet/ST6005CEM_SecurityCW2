@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-
 const addressSchema = new mongoose.Schema(
   {
     user: {
@@ -57,7 +56,6 @@ const addressSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Speeds up the common "all addresses for this user" lookup
 addressSchema.index({ user: 1 });
 
 module.exports = mongoose.model('Address', addressSchema);

@@ -2,15 +2,12 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const cloudinary = require('../config/cloudinary');
-
 const UPLOADS_ROOT = path.join(__dirname, '..', 'uploads');
-
 const generateFilename = (originalName) => {
   const ext = path.extname(originalName).toLowerCase();
   const uniqueSuffix = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
   return `image-${uniqueSuffix}${ext}`;
 };
-
 const saveImageLocally = (buffer, originalName, folder) => {
   return new Promise((resolve, reject) => {
     const dir = path.join(UPLOADS_ROOT, folder);
@@ -30,7 +27,6 @@ const saveImageLocally = (buffer, originalName, folder) => {
     });
   });
 };
-
 const uploadImageToCloudinary = (buffer, folder) => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
@@ -43,7 +39,6 @@ const uploadImageToCloudinary = (buffer, folder) => {
     uploadStream.end(buffer);
   });
 };
-
 const storeImage = async (buffer, originalName, folder) => {
   const provider = process.env.STORAGE_PROVIDER || 'local';
 
@@ -53,7 +48,6 @@ const storeImage = async (buffer, originalName, folder) => {
 
   return saveImageLocally(buffer, originalName, folder);
 };
-
 const deleteImage = async (publicId) => {
   if (!publicId) return;
   const provider = process.env.STORAGE_PROVIDER || 'local';
@@ -70,5 +64,4 @@ const deleteImage = async (publicId) => {
     }
   }
 };
-
 module.exports = { storeImage, deleteImage };

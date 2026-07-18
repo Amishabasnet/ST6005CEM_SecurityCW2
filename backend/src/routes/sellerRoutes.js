@@ -25,6 +25,7 @@ const {
 
 const router = express.Router();
 
+// Every route here requires a logged-in user.
 router.use(protect);
 
 router.post(

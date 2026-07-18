@@ -1,6 +1,5 @@
 const multer = require('multer');
 const ApiError = require('../utils/ApiError');
-
 const storage = multer.memoryStorage();
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -23,7 +22,6 @@ const upload = multer({
     files: MAX_PRODUCT_IMAGES,
   },
 });
-
 const wrapMulter = (multerHandler) => (req, res, next) => {
   multerHandler(req, res, (err) => {
     if (err instanceof multer.MulterError) {

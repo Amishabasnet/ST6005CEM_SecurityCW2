@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-
 const reviewSchema = new mongoose.Schema(
   {
     user: {
@@ -25,9 +24,8 @@ const reviewSchema = new mongoose.Schema(
       default: '',
     },
   },
-  { timestamps: true } 
+  { timestamps: true } // adds createdAt (and updatedAt)
 );
-
 reviewSchema.index({ user: 1, product: 1 }, { unique: true });
 
 module.exports = mongoose.model('Review', reviewSchema);

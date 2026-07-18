@@ -2,21 +2,28 @@ const Order = require('../models/orderModel');
 const Cart = require('../models/cartModel');
 const Product = require('../models/productModel');
 const Address = require('../models/addressModel');
+const Coupon = require('../models/couponModel');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
+const { notifyOrderStatusUpdate, notifyAdminsNewOrder } = require('../utils/notificationService');
+const { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } = require('../utils/emailService');
+const { validateCouponForUser } = require('../utils/couponService');
 
 const NON_CANCELLABLE_STATUSES = ['Shipped', 'Delivered', 'Cancelled'];
 
 const restoreStockForOrder = async (order) => {
   await Promise.all(
     order.orderItems.map((item) =>
-      Product.updateOne({ _id: item.product }, { $inc: { stock: item.quantity } })
+      Product.updateOne({ _id: item.product }, [
+        { $set: { stock: { $add: ['$stock', item.quantity] } } },
+        { $set: { isAvailable: { $gt: ['$stock', 0] } } },
+      ])
     )
   );
 };
 
 const placeOrder = asyncHandler(async (req, res) => {
-  const { addressId, shippingAddress: inlineAddress, paymentMethod } = req.body;
+  const { addressId, shippingAddress: inlineAddress, paymentMethod, couponCode } = req.body;
 
   let shippingAddressSnapshot;
   if (addressId) {
@@ -68,15 +75,24 @@ const placeOrder = asyncHandler(async (req, res) => {
     };
   });
 
-  const totalPrice =
+  const subtotal =
     Math.round(orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0) * 100) / 100;
- 
+  let coupon = null;
+  let discountAmount = 0;
+  if (couponCode) {
+    coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
+    discountAmount = validateCouponForUser(coupon, req.user._id, subtotal); // throws if invalid
+  }
+  const totalPrice = Math.round((subtotal - discountAmount) * 100) / 100;
   const decremented = [];
   try {
     for (const item of orderItems) {
       const result = await Product.updateOne(
         { _id: item.product, stock: { $gte: item.quantity } },
-        { $inc: { stock: -item.quantity } }
+        [
+          { $set: { stock: { $subtract: ['$stock', item.quantity] } } },
+          { $set: { isAvailable: { $gt: ['$stock', 0] } } },
+        ]
       );
       if (result.matchedCount === 0) {
         throw new ApiError(
@@ -89,23 +105,43 @@ const placeOrder = asyncHandler(async (req, res) => {
   } catch (err) {
     await Promise.all(
       decremented.map((item) =>
-        Product.updateOne({ _id: item.product }, { $inc: { stock: item.quantity } })
+        Product.updateOne({ _id: item.product }, [
+          { $set: { stock: { $add: ['$stock', item.quantity] } } },
+          { $set: { isAvailable: { $gt: ['$stock', 0] } } },
+        ])
       )
     );
     throw err;
   }
 
-  // Create the order
   const order = await Order.create({
     user: req.user._id,
     orderItems,
     shippingAddress: shippingAddressSnapshot,
     paymentMethod,
+    subtotal,
     totalPrice,
+    couponCode: coupon ? coupon.code : null,
+    discountAmount,
   });
+ 
+  if (coupon) {
+    try {
+      coupon.usedCount += 1;
+      coupon.usedBy.push({ user: req.user._id, order: order._id });
+      await coupon.save();
+    } catch (err) {
+      console.error(`Failed to record coupon usage for "${coupon.code}": ${err.message}`);
+    }
+  }
 
   cart.items = [];
   await cart.save();
+
+  await notifyOrderStatusUpdate(order); // "Order Placed" for the customer
+  await notifyAdminsNewOrder(order); // "New Order Received" for every admin
+
+  await sendOrderConfirmationEmail(req.user, order);
 
   res.status(201).json({ success: true, data: order });
 });
@@ -130,13 +166,13 @@ const getOrderById = asyncHandler(async (req, res) => {
 });
 
 const cancelOrder = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id);
+  const order = await Order.findById(req.params.id).populate('user', 'name email');
 
   if (!order) {
     throw new ApiError(404, 'Order not found');
   }
 
-  if (order.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+  if (order.user._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
     throw new ApiError(403, 'Not authorized to cancel this order');
   }
 
@@ -150,6 +186,8 @@ const cancelOrder = asyncHandler(async (req, res) => {
   order.orderStatus = 'Cancelled';
   await order.save();
   await restoreStockForOrder(order);
+  await notifyOrderStatusUpdate(order); // "Order Cancelled" for the customer
+  await sendOrderStatusUpdateEmail(order.user, order); // never throws
 
   res.status(200).json({ success: true, message: 'Order cancelled successfully', data: order });
 });
@@ -162,7 +200,7 @@ const getAllOrders = asyncHandler(async (req, res) => {
 const updateOrderStatus = asyncHandler(async (req, res) => {
   const { orderStatus } = req.body;
 
-  const order = await Order.findById(req.params.id);
+  const order = await Order.findById(req.params.id).populate('user', 'name email');
   if (!order) {
     throw new ApiError(404, 'Order not found');
   }
@@ -186,6 +224,10 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   if (orderStatus === 'Cancelled' && !wasAlreadyCancelled) {
     await restoreStockForOrder(order);
   }
+
+  await notifyOrderStatusUpdate(order); // e.g. "Order Shipped" / "Order Delivered" for the customer
+
+  await sendOrderStatusUpdateEmail(order.user, order);
 
   res.status(200).json({ success: true, data: order });
 });

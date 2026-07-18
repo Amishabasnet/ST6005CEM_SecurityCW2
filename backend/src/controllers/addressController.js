@@ -1,7 +1,6 @@
 const Address = require('../models/addressModel');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
-
 const unsetOtherDefaults = async (userId, keepAddressId) => {
   await Address.updateMany(
     { user: userId, _id: { $ne: keepAddressId } },

@@ -16,6 +16,7 @@
     "axios": "^1.18.1",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.10.0",
+    "cookie-praser": "^1.4.6",
     "set-cookie-parser": "3.1.2",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
