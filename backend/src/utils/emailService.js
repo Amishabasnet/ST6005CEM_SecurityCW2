@@ -5,8 +5,8 @@ const {
   passwordResetTemplate,
   orderStatusUpdateTemplate,
   orderDeliveredTemplate,
+  magicLinkTemplate,
 } = require('./emailTemplates');
-
 const sendEmail = async ({ to, subject, html }) => {
   try {
     if (!to) {
@@ -30,7 +30,6 @@ const sendEmail = async ({ to, subject, html }) => {
     return false;
   }
 };
-
 const sendWelcomeEmail = async (user) => {
   return sendEmail({
     to: user.email,
@@ -38,7 +37,6 @@ const sendWelcomeEmail = async (user) => {
     html: welcomeEmailTemplate({ name: user.name }),
   });
 };
-
 const sendOrderConfirmationEmail = async (user, order) => {
   return sendEmail({
     to: user.email,
@@ -46,7 +44,6 @@ const sendOrderConfirmationEmail = async (user, order) => {
     html: orderConfirmationTemplate({ name: user.name, order }),
   });
 };
-
 const sendPasswordResetEmail = async (user, resetUrl) => {
   return sendEmail({
     to: user.email,
@@ -54,7 +51,6 @@ const sendPasswordResetEmail = async (user, resetUrl) => {
     html: passwordResetTemplate({ name: user.name, resetUrl }),
   });
 };
-
 const sendOrderStatusUpdateEmail = async (user, order) => {
   const isDelivered = order.orderStatus === 'Delivered';
 
@@ -68,11 +64,18 @@ const sendOrderStatusUpdateEmail = async (user, order) => {
       : orderStatusUpdateTemplate({ name: user.name, order }),
   });
 };
-
+const sendMagicLinkEmail = async (user, loginUrl) => {
+  return sendEmail({
+    to: user.email,
+    subject: 'Your login link',
+    html: magicLinkTemplate({ name: user.name, loginUrl }),
+  });
+};
 module.exports = {
   sendEmail,
   sendWelcomeEmail,
   sendOrderConfirmationEmail,
   sendPasswordResetEmail,
   sendOrderStatusUpdateEmail,
+  sendMagicLinkEmail,
 };

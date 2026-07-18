@@ -10,6 +10,7 @@ const { notificationIdParamValidationRules } = require('../validators/notificati
 
 const router = express.Router();
 
+// Notifications always belong to a specific logged-in user.
 router.use(protect);
 
 router.get('/', getMyNotifications);

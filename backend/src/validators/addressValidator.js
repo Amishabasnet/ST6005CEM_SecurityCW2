@@ -1,5 +1,4 @@
 const { body, param } = require('express-validator');
-
 const createAddressValidationRules = [
   body('fullName')
     .trim()
@@ -55,7 +54,6 @@ const createAddressValidationRules = [
     .withMessage('isDefault must be true or false')
     .toBoolean(),
 ];
-
 const updateAddressValidationRules = [
   body('fullName')
     .optional()
@@ -114,11 +112,9 @@ const updateAddressValidationRules = [
     .exists()
     .withMessage('Use PUT /api/addresses/:id/default to set a default address'),
 ];
-
 const addressIdParamValidationRules = [
   param('id').isMongoId().withMessage('id must be a valid address ID'),
 ];
-
 module.exports = {
   createAddressValidationRules,
   updateAddressValidationRules,

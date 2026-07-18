@@ -1,5 +1,4 @@
 const { body, param } = require('express-validator');
-
 const addToCartValidationRules = [
   body('productId')
     .notEmpty()
@@ -14,7 +13,6 @@ const addToCartValidationRules = [
     .withMessage('quantity must be a positive integer')
     .toInt(),
 ];
-
 const updateCartItemValidationRules = [
   param('productId').isMongoId().withMessage('productId must be a valid product ID'),
 
@@ -25,11 +23,9 @@ const updateCartItemValidationRules = [
     .withMessage('quantity must be a positive integer')
     .toInt(),
 ];
-
 const productIdParamValidationRules = [
   param('productId').isMongoId().withMessage('productId must be a valid product ID'),
 ];
-
 module.exports = {
   addToCartValidationRules,
   updateCartItemValidationRules,

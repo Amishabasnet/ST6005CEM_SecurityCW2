@@ -1,5 +1,4 @@
 const { body, query } = require('express-validator');
-
 const createProductValidationRules = [
   body('name')
     .trim()
@@ -54,7 +53,6 @@ const createProductValidationRules = [
     .isURL()
     .withMessage('Each image must have a valid URL'),
 ];
-
 const updateProductValidationRules = [
   body('name')
     .optional()
@@ -106,18 +104,15 @@ const updateProductValidationRules = [
     .optional()
     .isURL()
     .withMessage('Each image must have a valid URL'),
-
   body('rating')
     .not()
     .exists()
     .withMessage('Rating cannot be set directly; it is derived from reviews'),
-
   body('numReviews')
     .not()
     .exists()
     .withMessage('numReviews cannot be set directly; it is derived from reviews'),
 ];
-
 const getProductsValidationRules = [
   query('keyword').optional().trim().isLength({ max: 100 }).withMessage('Keyword is too long'),
 
@@ -162,7 +157,6 @@ const getProductsValidationRules = [
     .isInt({ min: 1, max: 100 })
     .withMessage('limit must be a positive integer, max 100'),
 ];
-
 module.exports = {
   createProductValidationRules,
   updateProductValidationRules,

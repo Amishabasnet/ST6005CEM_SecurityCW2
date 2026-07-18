@@ -14,6 +14,7 @@ const {
 
 const router = express.Router();
 
+// Payments always belong to a specific logged-in user.
 router.use(protect);
 
 router.post('/create', createPaymentValidationRules, validate, createPayment);
