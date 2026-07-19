@@ -22,7 +22,8 @@ export function AuthProvider({ children }) {
       }
       try {
         const { data } = await authService.getProfile();
-        const profile = data.user || data;
+        const payload = data?.data ?? data;
+        const profile = payload.user || payload.data || payload;
         setUser(profile);
         localStorage.setItem("rewear_user", JSON.stringify(profile));
       } catch {
@@ -38,8 +39,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   const persistSession = (data) => {
-    const authToken = data.token || data.accessToken;
-    const authUser = data.user;
+    const payload = data?.data ?? data;
+    const authToken = payload.token || payload.accessToken;
+    const authUser = payload.user || payload.data || payload;
     localStorage.setItem("rewear_token", authToken);
     localStorage.setItem("rewear_user", JSON.stringify(authUser));
     setToken(authToken);
