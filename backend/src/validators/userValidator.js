@@ -1,5 +1,6 @@
 const { body } = require('express-validator');
 
+const { isStrongPassword, STRONG_PASSWORD_MESSAGE } = require('../utils/passwordPolicy');
 const updateUserProfileValidationRules = [
   body('name')
     .optional()
@@ -69,6 +70,8 @@ const changePasswordValidationRules = [
     .withMessage('New password is required')
     .isLength({ min: 6 })
     .withMessage('New password must be at least 6 characters long'),
+    .custom(isStrongPassword)
+    .withMessage(STRONG_PASSWORD_MESSAGE),
 
   body('confirmNewPassword')
     .notEmpty()

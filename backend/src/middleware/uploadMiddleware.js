@@ -5,6 +5,9 @@ const ApiError = require('../utils/ApiError');
 
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'products');
 
+const UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'products');
+
+// Ensure the upload directory exists
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
@@ -36,6 +39,7 @@ const upload = multer({
   limits: {
     fileSize: 5 * 1024 * 1024, // 5 MB per file
     files: 8, // matches the max images per product enforced in the schema
+    files: 8,
   },
 });
 

@@ -1,8 +1,11 @@
+const crypto = require('crypto');
 const User = require('../models/userModel');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const { sendTokenResponse } = require('../utils/generateToken');
 
+const { sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/emailService');
+const { calculatePasswordStrength } = require('../utils/passwordPolicy');
 const register = asyncHandler(async (req, res) => {
   const { name, email, password, phone, role } = req.body;
 
@@ -20,6 +23,9 @@ const register = asyncHandler(async (req, res) => {
   });
 
   sendTokenResponse(user, 201, res);
+  await sendWelcomeEmail(user);
+
+  sendTokenResponse(user, 201, res, req);
 });
 
 const login = asyncHandler(async (req, res) => {
@@ -32,12 +38,40 @@ const login = asyncHandler(async (req, res) => {
   }
 
   sendTokenResponse(user, 200, res);
+  const user = await User.findOne({ email }).select('+password +loginAttempts +lockUntil');
+
+  if (!user) {
+    throw new ApiError(401, 'Invalid email or password');
+  }
+
+  if (user.isLocked()) {
+    throw new ApiError(
+      423,
+      'This account is temporarily locked due to too many failed login attempts. Please try again later or reset your password.'
+    );
+  }
+
+  if (!(await user.matchPassword(password))) {
+    await user.registerFailedLogin();
+    throw new ApiError(401, 'Invalid email or password');
+  }
+
+  if (user.isBlocked) {
+    throw new ApiError(403, 'Your account has been blocked. Please contact support.');
+  }
+
+  await user.registerSuccessfulLogin();
+
+  sendTokenResponse(user, 200, res, req);
 });
 
 const logout = asyncHandler(async (req, res) => {
   res.cookie('token', 'none', {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.COOKIE_SAME_SITE || 'lax',
+    path: '/',
   });
 
   res.status(200).json({
@@ -47,6 +81,27 @@ const logout = asyncHandler(async (req, res) => {
 });
 
 const getProfile = asyncHandler(async (req, res) => {
+const logoutAllDevices = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  user.tokenVersion = (user.tokenVersion || 0) + 1;
+  await user.save({ validateBeforeSave: false });
+
+  res.cookie('token', 'none', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.COOKIE_SAME_SITE || 'lax',
+    path: '/',
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Logged out of all devices. Please log in again.',
+  });
+});
+
+const getProfile = asyncHandler(async (req, res) => {
+  // req.user is already attached by the `protect` middleware
   const user = await User.findById(req.user._id);
 
   if (!user) {
@@ -108,6 +163,70 @@ const getAllUsers = asyncHandler(async (req, res) => {
   });
 });
 
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const genericResponse = {
+    success: true,
+    message: 'If an account with that email exists, a password reset link has been sent.',
+  };
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(200).json(genericResponse);
+  }
+
+  const resetToken = user.getResetPasswordToken();
+  await user.save({ validateBeforeSave: false });
+
+  const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
+
+  const emailSent = await sendPasswordResetEmail(user, resetUrl);
+
+  if (!emailSent) {
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save({ validateBeforeSave: false });
+    throw new ApiError(500, 'Could not send password reset email — please try again later');
+  }
+
+  res.status(200).json(genericResponse);
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  }).select('+resetPasswordToken +resetPasswordExpire +password +passwordHistory');
+
+  if (!user) {
+    throw new ApiError(400, 'Password reset token is invalid or has expired');
+  }
+
+  if (await user.isPasswordReused(req.body.password)) {
+    throw new ApiError(
+      400,
+      'You cannot reuse your current or a recently used password. Please choose a different one.'
+    );
+  }
+  user.archiveCurrentPassword();
+
+  user.password = req.body.password;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  user.tokenVersion = (user.tokenVersion || 0) + 1;
+  await user.save();
+
+  sendTokenResponse(user, 200, res, req);
+});
+
+const checkPasswordStrength = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+  res.status(200).json({ success: true, data: calculatePasswordStrength(password || '') });
+});
+
 module.exports = {
   register,
   login,
@@ -115,4 +234,11 @@ module.exports = {
   getProfile,
   updateProfile,
   getAllUsers,
+  logoutAllDevices,
+  getProfile,
+  updateProfile,
+  getAllUsers,
+  forgotPassword,
+  resetPassword,
+  checkPasswordStrength,
 };

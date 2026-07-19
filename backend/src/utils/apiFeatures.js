@@ -9,7 +9,6 @@ class ApiFeatures {
     const excludedFields = ['page', 'sort', 'limit', 'fields', 'keyword'];
     excludedFields.forEach((field) => delete queryObj[field]);
 
-    // Support gte, gt, lte, lt operators e.g. price[gte]=100
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
 
@@ -49,12 +48,11 @@ class ApiFeatures {
 
   paginate() {
     const page = parseInt(this.queryString.page, 10) || 1;
-    const limit = parseInt(this.queryString.limit, 10) || 10;
+    const limit = parseInt(this.queryString.limit, 10) || 12;
     const skip = (page - 1) * limit;
 
     this.query = this.query.skip(skip).limit(limit);
     return this;
   }
 }
-
 module.exports = ApiFeatures;
