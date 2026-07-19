@@ -2,9 +2,6 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const ApiError = require('../utils/ApiError');
-
-const UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'products');
-
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'products');
 
 // Ensure the upload directory exists
@@ -38,7 +35,6 @@ const upload = multer({
   fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5 MB per file
-    files: 8, // matches the max images per product enforced in the schema
     files: 8,
   },
 });

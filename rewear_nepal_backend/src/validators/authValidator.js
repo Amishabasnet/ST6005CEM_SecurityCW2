@@ -1,6 +1,5 @@
 const { body, validationResult } = require('express-validator');
 const ApiError = require('../utils/ApiError');
-
 const { isStrongPassword, STRONG_PASSWORD_MESSAGE } = require('../utils/passwordPolicy');
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -13,7 +12,6 @@ const validate = (req, res, next) => {
   }
   next();
 };
-
 const registerValidationRules = [
   body('name')
     .trim()
@@ -33,8 +31,6 @@ const registerValidationRules = [
   body('password')
     .notEmpty()
     .withMessage('Password is required')
-    .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long'),
     .custom(isStrongPassword)
     .withMessage(STRONG_PASSWORD_MESSAGE),
 
@@ -49,7 +45,6 @@ const registerValidationRules = [
     .isIn(['user', 'admin'])
     .withMessage('Role must be either "user" or "admin"'),
 ];
-
 const loginValidationRules = [
   body('email')
     .trim()
@@ -61,7 +56,6 @@ const loginValidationRules = [
 
   body('password').notEmpty().withMessage('Password is required'),
 ];
-
 const updateProfileValidationRules = [
   body('name')
     .optional()
@@ -86,7 +80,6 @@ const updateProfileValidationRules = [
     .exists()
     .withMessage('Role cannot be updated through this endpoint'),
 ];
-
 const forgotPasswordValidationRules = [
   body('email')
     .trim()

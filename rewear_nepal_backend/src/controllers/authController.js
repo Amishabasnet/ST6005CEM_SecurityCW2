@@ -3,7 +3,6 @@ const User = require('../models/userModel');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const { sendTokenResponse } = require('../utils/generateToken');
-
 const { sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/emailService');
 const { calculatePasswordStrength } = require('../utils/passwordPolicy');
 const register = asyncHandler(async (req, res) => {
@@ -22,7 +21,6 @@ const register = asyncHandler(async (req, res) => {
     role: role === 'admin' ? 'admin' : 'user',
   });
 
-  sendTokenResponse(user, 201, res);
   await sendWelcomeEmail(user);
 
   sendTokenResponse(user, 201, res, req);
@@ -31,13 +29,6 @@ const register = asyncHandler(async (req, res) => {
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email }).select('+password');
-
-  if (!user || !(await user.matchPassword(password))) {
-    throw new ApiError(401, 'Invalid email or password');
-  }
-
-  sendTokenResponse(user, 200, res);
   const user = await User.findOne({ email }).select('+password +loginAttempts +lockUntil');
 
   if (!user) {
@@ -80,7 +71,6 @@ const logout = asyncHandler(async (req, res) => {
   });
 });
 
-const getProfile = asyncHandler(async (req, res) => {
 const logoutAllDevices = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
   user.tokenVersion = (user.tokenVersion || 0) + 1;
@@ -231,9 +221,6 @@ module.exports = {
   register,
   login,
   logout,
-  getProfile,
-  updateProfile,
-  getAllUsers,
   logoutAllDevices,
   getProfile,
   updateProfile,

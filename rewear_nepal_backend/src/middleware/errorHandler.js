@@ -18,13 +18,6 @@ const errorHandler = (err, req, res, next) => {
     }));
     message = 'Validation failed';
   }
-
-  if (err.code === 11000) {
-    statusCode = 400;
-    const field = Object.keys(err.keyValue)[0];
-    message = `An account with this ${field} already exists`;
-  }
-
   if (err.code === 11000) {
     statusCode = 400;
     const field = Object.keys(err.keyValue)[0];
